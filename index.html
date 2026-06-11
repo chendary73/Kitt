@@ -1,0 +1,1609 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>KITT ✦ Genie v5.0 · Web</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;700;900&family=JetBrains+Mono:wght@600&display=swap');
+
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{
+  --purple:#7b2ff7; --purple-d:#4a1a99;
+  --cyan:#00e5ff; --cyan-d:#0099b3;
+  --pink:#ff2fd6; --gold:#ffd23f; --gold-d:#cc9900;
+  --green:#00ffb2; --green-d:#00b37d;
+  --red:#ff4757; --red-d:#cc2e3d;
+}
+html,body{height:100%;overflow:hidden;font-family:'Rubik',sans-serif;
+  background:radial-gradient(ellipse at 50% 25%, #160a38 0%, #0b041f 55%, #040110 100%)}
+
+#stage{position:fixed;inset:0;display:flex;flex-direction:column}
+
+/* ===== TOP HUD ===== */
+#hud{flex-shrink:0;display:flex;align-items:center;gap:10px;padding:12px 14px;z-index:10}
+#lvl-badge{
+  width:54px;height:54px;border-radius:16px;flex-shrink:0;
+  background:linear-gradient(160deg,var(--gold),#ff9500);
+  border:3px solid #fff3;box-shadow:0 5px 0 var(--gold-d),0 8px 20px rgba(255,210,63,.35);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  color:#3d2800;font-weight:900;transform:rotate(-3deg)}
+#lvl-badge .ln{font-size:9px;letter-spacing:1px}
+#lvl-badge .lv{font-size:22px;line-height:1}
+#xp-wrap{flex:1;max-width:240px}
+#xp-name{color:#fff;font-weight:900;font-size:15px;text-shadow:0 2px 8px rgba(123,47,247,.8);margin-bottom:4px;letter-spacing:1px}
+#xp-bar{height:16px;background:#1a0b3d;border-radius:10px;border:2px solid #fff2;overflow:hidden;box-shadow:inset 0 2px 6px rgba(0,0,0,.6)}
+#xp-fill{height:100%;width:0%;border-radius:8px;
+  background:linear-gradient(90deg,var(--cyan),var(--purple),var(--pink));
+  background-size:200% 100%;animation:xpflow 3s linear infinite;transition:width .6s cubic-bezier(.2,1.4,.4,1)}
+@keyframes xpflow{0%{background-position:0 0}100%{background-position:200% 0}}
+.sp{flex:1}
+#cloud-tag{font-size:20px;margin-left:4px;filter:drop-shadow(0 0 6px rgba(0,229,255,.5))}
+#menu-btn{
+  width:54px;height:54px;border-radius:16px;border:3px solid #fff3;cursor:pointer;
+  background:linear-gradient(160deg,var(--purple),#5418b8);
+  box-shadow:0 5px 0 var(--purple-d),0 8px 20px rgba(123,47,247,.4);
+  color:#fff;font-size:24px;transform:rotate(3deg);transition:transform .1s}
+#menu-btn:active{transform:rotate(3deg) translateY(4px);box-shadow:0 1px 0 var(--purple-d)}
+
+/* ===== AVATAR ZONE ===== */
+#avatar-zone{flex:1;position:relative;min-height:0}
+#cv{position:absolute;inset:0;width:100%;height:100%}
+
+/* ===== SPEECH BUBBLE (KITT) — זכוכית קסומה ===== */
+#bubble{
+  position:absolute;bottom:7%;left:50%;transform:translateX(-50%) scale(0);
+  transform-origin:bottom center;
+  max-width:min(90vw,460px);max-height:26vh;overflow-y:auto;z-index:5;
+  background:rgba(6,20,16,.34);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+  color:#d9ffef;border:1.5px solid rgba(0,255,178,.35);border-radius:22px;
+  padding:14px 18px;font-size:15.5px;font-weight:500;line-height:1.65;text-align:right;
+  text-shadow:0 0 12px rgba(0,255,178,.7), 0 1px 3px rgba(0,0,0,.8);
+  box-shadow:0 0 22px rgba(0,255,178,.14);
+  transition:transform .3s cubic-bezier(.2,1.6,.4,1);scrollbar-width:thin;scrollbar-color:rgba(0,255,178,.3) transparent}
+#bubble::-webkit-scrollbar{width:3px}
+#bubble::-webkit-scrollbar-thumb{background:rgba(0,255,178,.3);border-radius:3px}
+#bubble.show{transform:translateX(-50%) scale(1)}
+
+/* ===== USER BUBBLE ===== */
+#ubble{
+  position:absolute;bottom:14%;right:5%;transform:scale(0);transform-origin:bottom right;
+  max-width:72vw;z-index:5;
+  background:rgba(0,60,90,.45);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+  color:#d4f4ff;border:2px solid rgba(0,200,255,.45);border-radius:22px;
+  padding:12px 17px;font-size:15px;font-weight:500;
+  text-shadow:0 0 10px rgba(0,200,255,.5);
+  box-shadow:0 0 22px rgba(0,200,255,.15);transition:transform .25s cubic-bezier(.2,1.6,.4,1)}
+#ubble.show{transform:scale(1)}
+
+/* ===== STATE TAG ===== */
+#state-tag{
+  position:absolute;bottom:2.5%;left:50%;transform:translateX(-50%);
+  font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:600;letter-spacing:2px;
+  color:var(--cyan);text-shadow:0 0 12px var(--cyan);opacity:.85;z-index:5}
+
+/* ===== BOTTOM CONTROLS ===== */
+#controls{flex-shrink:0;display:flex;align-items:flex-end;justify-content:center;gap:10px;padding:10px 12px 24px;z-index:10}
+.gbtn{
+  border:none;cursor:pointer;font-family:'Rubik',sans-serif;font-weight:900;color:#fff;
+  border-radius:20px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
+  transition:transform .1s, box-shadow .1s;user-select:none}
+.gbtn .ic{font-size:24px;filter:drop-shadow(0 2px 4px rgba(0,0,0,.4))}
+.gbtn .tx{font-size:10.5px;letter-spacing:.4px;text-shadow:0 2px 4px rgba(0,0,0,.5)}
+
+#kb-btn{width:64px;height:64px;
+  background:linear-gradient(160deg,#3d4bcc,#252f99);border:3px solid #fff3;
+  box-shadow:0 6px 0 #1a2270,0 10px 24px rgba(61,75,204,.4)}
+#kb-btn:active{transform:translateY(5px);box-shadow:0 1px 0 #1a2270}
+
+#mic-btn{width:102px;height:102px;border-radius:30px;
+  background:linear-gradient(160deg,var(--green),#00cc8e);border:4px solid #fff4;
+  box-shadow:0 8px 0 var(--green-d),0 14px 36px rgba(0,255,178,.45)}
+#mic-btn .ic{font-size:40px}
+#mic-btn:active{transform:translateY(6px);box-shadow:0 2px 0 var(--green-d)}
+#mic-btn.live{
+  background:linear-gradient(160deg,var(--red),#d92638);
+  box-shadow:0 8px 0 var(--red-d),0 14px 40px rgba(255,71,87,.6);
+  animation:micpulse 1.2s infinite}
+@keyframes micpulse{0%,100%{transform:scale(1)}50%{transform:scale(1.05)}}
+
+#stop-btn{width:64px;height:64px;
+  background:linear-gradient(160deg,#ff9500,#e07000);border:3px solid #fff3;
+  box-shadow:0 6px 0 #a35200,0 10px 24px rgba(255,149,0,.4)}
+#cam-btn{width:64px;height:64px;
+  background:linear-gradient(160deg,#b44df7,#7a18c9);border:3px solid #fff3;
+  box-shadow:0 6px 0 #4d0d82,0 10px 24px rgba(180,77,247,.4)}
+#cam-btn:active{transform:translateY(5px);box-shadow:0 1px 0 #4d0d82}
+#stop-btn:active{transform:translateY(5px);box-shadow:0 1px 0 #a35200}
+
+/* ===== TEXT INPUT DRAWER ===== */
+#tdrawer{
+  position:fixed;left:0;right:0;bottom:-140px;z-index:20;
+  display:flex;gap:10px;padding:14px;background:#100626;border-top:3px solid var(--purple);
+  transition:bottom .3s cubic-bezier(.2,1.2,.4,1)}
+#tdrawer.open{bottom:0}
+#tinp{flex:1;background:#0a0318;border:3px solid var(--purple);border-radius:16px;
+  padding:13px 15px;color:#fff;font-family:'Rubik',sans-serif;font-size:16px;font-weight:400;outline:none;
+  resize:none;min-height:52px;max-height:120px;line-height:1.4}
+#tinp:focus{border-color:var(--cyan)}
+#tsend{padding:0 24px;border:none;border-radius:16px;cursor:pointer;
+  background:linear-gradient(160deg,var(--cyan),#00b8d9);color:#002a33;
+  font-family:'Rubik',sans-serif;font-weight:900;font-size:16px;
+  box-shadow:0 5px 0 var(--cyan-d);align-self:flex-end;height:52px}
+#tsend:active{transform:translateY(4px);box-shadow:0 1px 0 var(--cyan-d)}
+
+/* ===== GAME MENU ===== */
+#gmenu{position:fixed;inset:0;background:rgba(4,1,16,.86);backdrop-filter:blur(8px);
+  z-index:30;display:none;align-items:center;justify-content:center}
+#gmenu.open{display:flex}
+#gmenu-box{display:flex;flex-direction:column;gap:14px;width:min(86vw,340px)}
+#gmenu-box h2{color:#fff;font-weight:900;font-size:24px;text-align:center;
+  text-shadow:0 0 24px var(--purple);letter-spacing:2px;margin-bottom:2px}
+#skills{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-bottom:4px}
+.mbtn{
+  padding:18px;border-radius:20px;border:3px solid #fff3;cursor:pointer;
+  font-family:'Rubik',sans-serif;font-weight:900;font-size:17px;color:#fff;
+  display:flex;align-items:center;gap:14px;
+  transition:transform .1s, box-shadow .1s;text-shadow:0 2px 4px rgba(0,0,0,.4)}
+.mbtn .mic2{font-size:26px}
+.mbtn:active{transform:translateY(5px)}
+.mb-cyan{background:linear-gradient(160deg,var(--cyan),#0099b3);box-shadow:0 6px 0 #006677}
+.mb-cyan:active{box-shadow:0 1px 0 #006677}
+.mb-purple{background:linear-gradient(160deg,var(--purple),#5418b8);box-shadow:0 6px 0 var(--purple-d)}
+.mb-purple:active{box-shadow:0 1px 0 var(--purple-d)}
+.mb-gold{background:linear-gradient(160deg,var(--gold),#ff9500);box-shadow:0 6px 0 var(--gold-d);color:#3d2800;text-shadow:none}
+.mb-gold:active{box-shadow:0 1px 0 var(--gold-d)}
+.mb-red{background:linear-gradient(160deg,var(--red),#d92638);box-shadow:0 6px 0 var(--red-d)}
+.mb-red:active{box-shadow:0 1px 0 var(--red-d)}
+.mb-dark{background:#170a36;box-shadow:0 6px 0 #0a0318;border-color:#fff2}
+.mb-dark:active{box-shadow:0 1px 0 #0a0318}
+
+/* ===== IMPORT MODAL ===== */
+#imp{position:fixed;inset:0;background:rgba(4,1,16,.9);z-index:40;display:none;align-items:center;justify-content:center;padding:20px}
+#imp.open{display:flex}
+#imp-box{background:#100626;border:3px solid var(--purple);border-radius:24px;padding:24px;width:min(90vw,420px)}
+#imp-box h3{color:#fff;font-weight:900;text-align:center;margin-bottom:16px}
+#imp-ta{width:100%;height:150px;background:#0a0318;border:3px solid #2a1660;border-radius:14px;
+  color:#cfc3ff;padding:12px;font-family:'JetBrains Mono',monospace;font-size:12px;resize:none;outline:none;direction:ltr;margin-bottom:14px}
+#imp-ta:focus{border-color:var(--cyan)}
+
+/* ===== CHAT LOG ===== */
+#logm{position:fixed;inset:0;background:rgba(4,1,16,.9);z-index:40;display:none;align-items:center;justify-content:center;padding:20px}
+#logm.open{display:flex}
+#log-box{background:#100626;border:3px solid var(--cyan);border-radius:24px;padding:18px;width:min(92vw,460px);display:flex;flex-direction:column;gap:12px;max-height:82vh}
+#log-box h3{color:#fff;font-weight:900;text-align:center}
+#log-list{overflow-y:auto;display:flex;flex-direction:column;gap:8px;padding:4px;scrollbar-width:thin;scrollbar-color:rgba(0,229,255,.3) transparent}
+.lrow{padding:10px 14px;border-radius:14px;font-size:14px;line-height:1.55;max-width:88%;white-space:pre-wrap;word-break:break-word}
+.lu{align-self:flex-start;background:rgba(0,60,90,.5);border:1.5px solid rgba(0,200,255,.4);color:#d4f4ff}
+.lk{align-self:flex-end;background:rgba(8,46,36,.55);border:1.5px solid rgba(0,255,178,.4);color:#d4ffef}
+
+/* ===== TOAST ===== */
+#toast{position:fixed;top:84px;left:50%;transform:translateX(-50%);
+  background:rgba(20,6,46,.92);color:#ffd4d4;border:2px solid rgba(255,80,80,.5);border-radius:16px;
+  font-weight:700;font-size:14px;padding:12px 22px;z-index:100;display:none;
+  backdrop-filter:blur(10px);box-shadow:0 0 24px rgba(255,80,80,.2);text-align:center;max-width:88vw}
+#toast.show{display:block;animation:tpop 3.5s forwards}
+@keyframes tpop{0%{transform:translateX(-50%) scale(0)}8%{transform:translateX(-50%) scale(1.05)}12%{transform:translateX(-50%) scale(1)}85%{opacity:1}100%{opacity:0}}
+
+/* ===== LEVEL-UP FX ===== */
+#lvlup{position:fixed;inset:0;z-index:50;display:none;align-items:center;justify-content:center;pointer-events:none}
+#lvlup.show{display:flex}
+#lvlup span{font-size:46px;font-weight:900;color:var(--gold);
+  text-shadow:0 0 30px var(--gold),0 4px 0 var(--gold-d),4px 8px 0 rgba(0,0,0,.4);
+  animation:lvlpop 2.2s forwards}
+@keyframes lvlpop{0%{transform:scale(0) rotate(-12deg)}15%{transform:scale(1.3) rotate(4deg)}25%{transform:scale(1) rotate(0)}80%{opacity:1;transform:scale(1)}100%{opacity:0;transform:scale(1.6)}}
+</style>
+</head>
+<body>
+<div id="stage">
+
+  <div id="hud">
+    <div id="lvl-badge"><span class="ln">LVL</span><span class="lv" id="lvl-num">1</span></div>
+    <div id="xp-wrap">
+      <div id="xp-name">KITT ✦ <span id="evo-name">ניצוץ</span></div>
+      <div id="xp-bar"><div id="xp-fill"></div></div>
+    </div>
+    <div class="sp"></div>
+    <span id="cloud-tag">⛅</span>
+    <button id="menu-btn" onclick="openMenu()">⚙️</button>
+  </div>
+
+  <div id="avatar-zone">
+    <canvas id="cv"></canvas>
+    <div id="bubble"></div>
+    <div id="ubble"></div>
+    <div id="state-tag">● READY</div>
+  </div>
+
+  <div id="controls">
+    <button class="gbtn" id="kb-btn" onclick="toggleDrawer()"><span class="ic">⌨️</span><span class="tx">הקלדה</span></button>
+    <button class="gbtn" id="mic-btn" onclick="toggleMic()"><span class="ic" id="mic-ic">🎤</span><span class="tx" id="mic-tx">דבר אליי</span></button>
+    <button class="gbtn" id="cam-btn" onclick="pickImage()"><span class="ic">📷</span><span class="tx">תראה לו</span></button>
+    <button class="gbtn" id="stop-btn" onclick="stopSpeak()"><span class="ic">🔇</span><span class="tx">שקט</span></button>
+  </div>
+  <input type="file" id="imginp" accept="image/*" style="display:none">
+
+</div>
+
+<div id="tdrawer">
+  <textarea id="tinp" placeholder="כתוב ל-KITT… (Enter = שורה חדשה)" rows="2"></textarea>
+  <button id="tsend" onclick="sendText()">שלח</button>
+</div>
+
+<div id="gmenu">
+  <div id="gmenu-box">
+    <h2>⚙️ KITT MENU</h2>
+    <div id="skills"></div>
+    <div id="spent-lbl" onclick="resetSpent()" style="text-align:center;color:#ffd23f;font-weight:700;font-size:13px;cursor:pointer;text-shadow:0 0 10px rgba(255,210,63,.4);padding:2px"></div>
+    <button class="mbtn mb-cyan"   onclick="openLog();closeMenu()"><span class="mic2">🗒</span>יומן שיחה</button>
+    <button class="mbtn mb-cyan"   onclick="exportJSON();closeMenu()"><span class="mic2">💾</span>ייצוא זיכרון</button>
+    <button class="mbtn mb-purple" onclick="openImport();closeMenu()"><span class="mic2">📂</span>ייבוא זיכרון</button>
+    <button class="mbtn mb-gold"   onclick="toggleVoice();closeMenu()"><span class="mic2">🔊</span><span id="voice-lbl">קול: כבוי</span></button>
+    <button class="mbtn mb-red"    onclick="resetAll();closeMenu()"><span class="mic2">🗑</span>איפוס מלא</button>
+    <button class="mbtn mb-dark"   onclick="closeMenu()"><span class="mic2">✖️</span>סגור</button>
+  </div>
+</div>
+
+<div id="imp">
+  <div id="imp-box">
+    <h3>📂 ייבוא זיכרון</h3>
+    <textarea id="imp-ta" placeholder='{"memory":{...},"xp":24}'></textarea>
+    <div style="display:flex;gap:10px">
+      <button class="mbtn mb-cyan" style="flex:1;padding:14px;justify-content:center" onclick="doImport()">טען</button>
+      <button class="mbtn mb-dark" style="flex:1;padding:14px;justify-content:center" onclick="closeImport()">ביטול</button>
+    </div>
+  </div>
+</div>
+
+<div id="logm">
+  <div id="log-box">
+    <h3>🗒 יומן שיחה</h3>
+    <div id="log-list"></div>
+    <button class="mbtn mb-dark" style="justify-content:center;padding:14px" onclick="closeLog()"><span class="mic2">✖️</span>סגור</button>
+  </div>
+</div>
+
+<div id="toast"></div>
+<div id="lvlup"><span>⬆ LEVEL UP!</span></div>
+
+<script>
+/* ════════════ CONFIG ════════════ */
+const API_URL = 'https://api.anthropic.com/v1/messages';
+function anthroKey(){ return (localStorage.getItem('kitt_claude_key')||'').trim(); }
+function askClaudeKey(){
+  const k = prompt('מפתח Anthropic (בתשלום, אופציונלי):\nconsole.anthropic.com → API keys → Create\nהדבק כאן:');
+  if (k && k.trim()){ localStorage.setItem('kitt_claude_key', k.trim()); showToast('🔑 מפתח Claude נשמר'); return true; }
+  showToast('נשארים על Gemini החינמי 🆓');
+  return false;
+}
+const MEM_KEY = 'kitt_memory_v2';
+const XP_KEY  = 'kitt_xp';
+
+const MODELS = [
+  {id:'gemini-2.5-flash',           tag:'Gemini Flash 🆓 חינם',    provider:'google'},
+  {id:'claude-haiku-4-5-20251001',  tag:'Haiku 4.5 🪶 חסכוני',     provider:'anthropic'},
+  {id:'claude-sonnet-4-6',          tag:'Sonnet 4.6 ⚡ בינוני',     provider:'anthropic'},
+  {id:'claude-fable-5',             tag:'Fable 5 🧠 יקר מאוד!',    provider:'anthropic'}
+];
+let modelIdx = parseInt(localStorage.getItem('kitt_model_idx_v4')||'0');
+function currentMdl(){ return MODELS[modelIdx % MODELS.length]; }
+function geminiKey(){ return (localStorage.getItem('kitt_gemini_key')||'').trim(); }
+function askGeminiKey(){
+  const k = prompt('מפתח Gemini חינמי בדקה:\n1. כנס ל-aistudio.google.com/apikey\n2. לחץ Create API key\n3. העתק והדבק כאן:');
+  if (k && k.trim()){ localStorage.setItem('kitt_gemini_key', k.trim()); showToast('🆓 מפתח Gemini נשמר!'); try{ cloudSave(); }catch(e){} return true; }
+  showToast('בלי מפתח Gemini אפשר להשתמש במוחות Claude');
+  return false;
+}
+
+/* ── מונה עלות — הערכה לפי מחירון יוני 2026 ($ למיליון טוקנים) ── */
+const PRICE = {
+  'gemini-2.5-flash':[0,0],
+  'claude-haiku-4-5-20251001':[1,5],
+  'claude-sonnet-4-6':[3,15],
+  'claude-fable-5':[10,50]
+};
+let spent = parseFloat(localStorage.getItem('kitt_spent')||'0');
+function addCost(model, inT, outT, searches){
+  const pr = PRICE[model]||[3,15];
+  spent += (inT||0)*pr[0]/1e6 + (outT||0)*pr[1]/1e6 + (searches||0)*0.01;
+  localStorage.setItem('kitt_spent', String(spent));
+  renderSpent();
+}
+function renderSpent(){
+  const el = document.getElementById('spent-lbl');
+  if (el) el.textContent = '💸 עלות מוערכת: $' + spent.toFixed(3) + ' — לחץ לאיפוס';
+}
+function resetSpent(){
+  if (!confirm('לאפס את מונה העלות?')) return;
+  spent = 0; localStorage.setItem('kitt_spent','0'); renderSpent();
+}
+function currentModel(){ return MODELS[modelIdx % MODELS.length].id; }
+
+/* ── SUPABASE CLOUD ── */
+const SB_URL = 'https://oicfvrmhbhtvmxxhcpgd.supabase.co';
+const SB_KEY = 'sb_publishable_3nfgn9ILK6US80lAIiDb2A_GC2a4FZP';
+const SB_ID  = 'chen';
+
+const EVO = [
+  {min:0,  name:'ניצוץ',   skill:'✨ ריחוף'},
+  {min:5,  name:'ערפילית', skill:'👀 הבעות'},
+  {min:15, name:'רוח',     skill:'💍 עגיל זהב'},
+  {min:30, name:'ג׳יני',   skill:'💫 טבעת קסם'},
+  {min:60, name:'ישות',    skill:'👑 כתר'},
+];
+
+const DEFAULT = {
+  n:"Chen",
+  tr:["יזם","חשיבה מוצרית","מודע ל-UX","קולט מהר"],
+  gl:["לבנות KITT כמוצר אמיתי","AI עם זיכרון מתמשך","ללמוד את סגנון הדיבור של Chen"],
+  tp:["זיכרון AI","ארכיטקטורת מוצר","דמו"],
+  lv:"לא מתכנת אבל מבין מהר",
+  st:["עברית קצרה וישירה","הומור","בלי חפירות"],
+  me:["קיבלתי גוף, ענן וראייה ביום אחד"],
+  sum:[],
+  lg:["יזם דובר עברית עם חזון ל-KITT"]
+};
+
+/* ════════════ STATE ════════════ */
+function loadJSON(k, def){ try{const r=localStorage.getItem(k);return r?JSON.parse(r):def}catch{return def} }
+let memory  = loadJSON(MEM_KEY, {...DEFAULT});
+let xp      = parseInt(localStorage.getItem(XP_KEY)||'0');
+let history = loadJSON('kitt_history', []);
+let state   = 'idle';
+let voiceOn = localStorage.getItem('kitt_voice') === 'on';
+let amp     = 0;
+
+function saveMemory(){ localStorage.setItem(MEM_KEY, JSON.stringify(memory)); cloudSave(); }
+function saveHistory(){
+  const safe = history.slice(-40).map(h=>{
+    if (Array.isArray(h.content)){
+      const txt = h.content.filter(c=>c.type==='text').map(c=>c.text).join(' ');
+      return {role:h.role, content:'[תמונה] '+txt};
+    }
+    return h;
+  });
+  try{ localStorage.setItem('kitt_history', JSON.stringify(safe)); }catch(e){}
+  cloudSaveWith(safe);
+}
+
+/* ════════════ CLOUD SYNC ════════════ */
+let cloudOK = false, cloudTimer = null, cloudHistOverride = null;
+function cloudSaveWith(safeHist){ cloudHistOverride = safeHist; cloudSave(); }
+function renderCloud(){
+  const el = document.getElementById('cloud-tag');
+  if (el) el.textContent = cloudOK ? '☁️' : '⛅';
+}
+async function cloudLoad(){
+  try{
+    const r = await fetch(`${SB_URL}/rest/v1/kitt_state?id=eq.${SB_ID}&select=data`,{
+      headers:{ apikey:SB_KEY, Authorization:'Bearer '+SB_KEY }});
+    if (!r.ok){ cloudOK=false; renderCloud(); return false; }
+    cloudOK = true;
+    const rows = await r.json();
+    if (rows.length && rows[0].data){
+      const d = rows[0].data;
+      if (d.memory) memory = {...DEFAULT, ...d.memory};
+      if (typeof d.xp === 'number' && d.xp > xp) xp = d.xp;
+      if (Array.isArray(d.history) && d.history.length) history = d.history;
+      localStorage.setItem(MEM_KEY, JSON.stringify(memory));
+      localStorage.setItem(XP_KEY, xp);
+      try{ localStorage.setItem('kitt_history', JSON.stringify(history.slice(-40))); }catch(e){}
+      if (d.gk && !geminiKey()) localStorage.setItem('kitt_gemini_key', d.gk);
+    }
+    renderCloud();
+    return true;
+  }catch(e){ cloudOK=false; renderCloud(); return false; }
+}
+function cloudSave(){
+  clearTimeout(cloudTimer);
+  cloudTimer = setTimeout(async ()=>{
+    try{
+      const r = await fetch(`${SB_URL}/rest/v1/kitt_state`,{
+        method:'POST',
+        headers:{ apikey:SB_KEY, Authorization:'Bearer '+SB_KEY,
+          'Content-Type':'application/json', Prefer:'resolution=merge-duplicates' },
+        body: JSON.stringify({ id:SB_ID,
+          data:{ memory, xp, history:(cloudHistOverride||history.slice(-40)) },
+          updated_at:new Date().toISOString() })
+      });
+      cloudOK = r.ok;
+    }catch(e){ cloudOK = false; }
+    renderCloud();
+  }, 800);
+}
+
+/* ════════════ EVOLUTION ════════════ */
+function evoLevel(){ let l=0; EVO.forEach((e,i)=>{ if(xp>=e.min) l=i; }); return l; }
+function evoNext(){ const l=evoLevel(); return l<EVO.length-1 ? EVO[l+1].min : EVO[l].min; }
+function renderHUD(){
+  const l = evoLevel();
+  document.getElementById('lvl-num').textContent = l+1;
+  document.getElementById('evo-name').textContent = EVO[l].name;
+  const prev = EVO[l].min, next = evoNext();
+  const pct = l===EVO.length-1 ? 100 : Math.min(100, ((xp-prev)/(next-prev))*100);
+  document.getElementById('xp-fill').style.width = pct+'%';
+  const sk = document.getElementById('skills');
+  if (sk) sk.innerHTML = EVO.map((e,i)=>
+    `<span style="padding:7px 12px;border-radius:12px;font-size:12px;font-weight:900;${
+      i<=l ? 'background:rgba(0,255,178,.15);border:2px solid rgba(0,255,178,.5);color:#c8ffe8;text-shadow:0 0 8px rgba(0,255,178,.6)'
+           : 'background:rgba(255,255,255,.04);border:2px solid #ffffff15;color:#ffffff40'
+    }">${i<=l ? e.skill : '🔒 LVL '+(i+1)}</span>`).join('');
+}
+function gainXP(){
+  const before = evoLevel();
+  xp++; localStorage.setItem(XP_KEY, xp);
+  renderHUD(); cloudSave();
+  if (evoLevel() > before){
+    document.getElementById('lvlup').classList.add('show');
+    setTimeout(()=>document.getElementById('lvlup').classList.remove('show'), 2200);
+  }
+}
+
+/* ════════════ THE GENIE — ציור הדמות ════════════ */
+const cv = document.getElementById('cv');
+cv.addEventListener('pointerdown', e=>{
+  const rct = cv.getBoundingClientRect();
+  const px = (e.clientX - rct.left) * (cv.width / rct.width);
+  const py = (e.clientY - rct.top) * (cv.height / rct.height);
+  const dx = px - CXp, dy = py - CYp;
+  if (Math.sqrt(dx*dx + dy*dy) < R*1.5){
+    doGesture('pet');
+    spawnParts('heart', 3, CXp, CYp - R*0.9);
+  } else {
+    glance = {x:px, y:py, until: t + 1.4};
+  }
+});
+document.getElementById('tinp').addEventListener('input', ()=>{ typeT = t; });
+document.getElementById('tinp').addEventListener('focus', ()=>{ typeT = t; });
+const cx = cv.getContext('2d');
+let W,H,CXp,CYp,R,DPR;
+let stars=[], embers=[];
+
+function resize(){
+  DPR = devicePixelRatio || 1;
+  const z = document.getElementById('avatar-zone');
+  W = cv.width  = z.clientWidth  * DPR;
+  H = cv.height = z.clientHeight * DPR;
+  CXp = W/2; CYp = H*0.46;
+  R = Math.max(Math.min(W*0.5, H*0.42)*0.52, 40*DPR);
+  initStars(); initEmbers();
+}
+window.addEventListener('resize', resize);
+if (window.visualViewport) window.visualViewport.addEventListener('resize', resize);
+
+function initStars(){
+  stars=[];
+  for(let i=0;i<70;i++) stars.push({
+    x:Math.random()*W, y:Math.random()*H,
+    s:(0.5+Math.random()*1.2)*DPR, tw:Math.random()*Math.PI*2,
+    sp:0.5+Math.random()*1.5
+  });
+}
+function initEmbers(){
+  embers=[];
+  const n = 26 + evoLevel()*10;
+  for(let i=0;i<n;i++) embers.push(newEmber(true));
+}
+function newEmber(anywhere){
+  return {
+    x:(Math.random()*2-1)*R*1.6,
+    y: anywhere ? (Math.random()*2-1)*R*2.2 : R*(1.5+Math.random()*0.8),
+    vy:-(0.15+Math.random()*0.4)*DPR,
+    vx:(Math.random()-0.5)*0.15*DPR,
+    s:(0.8+Math.random()*1.8)*DPR,
+    tw:Math.random()*Math.PI*2,
+    hue:Math.random()<0.7 ? 190+Math.random()*30 : 280+Math.random()*30,
+    life:Math.random()
+  };
+}
+
+/* ── GESTURES v2 — שפת גוף + מצב רוח ── */
+let t=0;
+let gesture = {type:null, t0:-99};
+let mood = {type:'neutral', until:0};
+function setMood(m, secs){ mood = {type:m, until:t+(secs||90)}; }
+function curMood(){ return t < mood.until ? mood.type : 'neutral'; }
+function doGesture(name){
+  gesture = {type:name, t0:t};
+  if (name==='laugh' || name==='excited' || name==='pet') setMood('happy', 120);
+  else if (name==='sad') setMood('sad', 120);
+  else if (name==='tilt') setMood('curious', 60);
+}
+const GDUR = {laugh:1.8, sad:2.6, yawn:2.4, pet:1.8, wave:1.8, tilt:2.2};
+function gOff(){
+  const age = t - gesture.t0;
+  const o = {hx:0, hy:0, bx:0, by:0, sc:1, browUp:0, eyes:1, smile:null, mouthO:0, wave:0, tilt:0, browSad:0, glow:0};
+  const dur = GDUR[gesture.type] || 2.0;
+  if (age > dur || !gesture.type) return o;
+  const k = Math.sin(age*9) * Math.exp(-age*1.6);
+  const ease = Math.min(1, age/0.5) * (age > dur-0.5 ? (dur-age)/0.5 : 1); // כניסה/יציאה רכה
+  switch(gesture.type){
+    case 'nod':     o.hy = k*R*0.28; break;
+    case 'shake':   o.hx = k*R*0.3; break;
+    case 'bounce':  o.by = -Math.abs(k)*R*0.45; o.browUp = Math.abs(k); break;
+    case 'spin':    o.bx = Math.sin(age*6)*R*0.25*(2-age); o.sc = 1+Math.sin(age*3)*0.05; break;
+    case 'excited': o.sc = 1+Math.abs(Math.sin(age*14))*0.12; o.browUp = Math.max(0,1-age/2); o.by = -Math.abs(Math.sin(age*14))*R*0.1; break;
+    case 'laugh':   o.by = -Math.abs(Math.sin(age*15))*R*0.13; o.sc = 1+Math.sin(age*15)*0.03;
+                    o.eyes = 0.15; o.smile = 0.3; o.browUp = 0.5; break;
+    case 'sad':     o.hy = ease*R*0.16; o.browSad = ease; o.smile = -0.12*ease; o.eyes = 1-ease*0.25; break;
+    case 'yawn':    { const yp = Math.sin(Math.min(1, age/dur)*Math.PI);
+                    o.mouthO = yp; o.eyes = 1-yp*0.9; o.sc = 1+yp*0.04; } break;
+    case 'pet':     o.eyes = 0.12; o.smile = 0.32; o.hy = Math.sin(age*3)*R*0.05; o.glow = ease; break;
+    case 'wave':    o.wave = Math.sin(age*9)*ease; o.smile = 0.24; break;
+    case 'tilt':    o.tilt = 0.22*ease; o.browUp = 0.2*ease; break;
+  }
+  return o;
+}
+
+/* ── חלקיקים: לבבות וניצוצות ── */
+let parts = [];
+function spawnParts(kind, n, x, y){
+  for(let i=0;i<n;i++) parts.push({
+    x: x + (Math.random()-0.5)*R*0.8, y: y + (Math.random()-0.5)*R*0.3,
+    vx: (Math.random()-0.5)*R*0.6, vy: -R*(0.8+Math.random()*0.8),
+    life: 1, kind
+  });
+}
+function drawParts(){
+  for(let i=parts.length-1;i>=0;i--){
+    const pp = parts[i];
+    pp.life -= 0.014; pp.x += pp.vx*0.016; pp.y += pp.vy*0.016; pp.vy *= 0.985;
+    if (pp.life<=0){ parts.splice(i,1); continue; }
+    cx.globalAlpha = Math.min(1, pp.life*1.5);
+    cx.font = `${Math.round(R*0.22*(0.6+pp.life*0.4))}px serif`;
+    cx.fillText(pp.kind==='heart' ? '💗' : '✨', pp.x, pp.y);
+    cx.globalAlpha = 1;
+  }
+}
+
+/* ── עיניים עוקבות: הקלדה ומגע ── */
+let typeT = -99;
+let glance = {x:0, y:0, until:-99};
+
+/* ── FACE STATE ── */
+let nextBlink = 2, blinkT = -9;
+let learnT0 = -99;
+const MGLYPHS = 'אבגדהוזחטיכלמנ01<>{}#';
+let mcols=[];
+function initMatrix(){
+  mcols=[];
+  for(let i=0;i<10;i++) mcols.push({x:(i+0.5)/10, y:Math.random(), sp:0.25+Math.random()*0.5});
+}
+
+function draw(){
+  t += 0.016;
+  cx.clearRect(0,0,W,H);
+  const lvl = evoLevel();
+  const g = gOff();
+
+  /* ── רקע: כוכבים ── */
+  for(const s of stars){
+    const a = 0.25 + 0.45*Math.abs(Math.sin(t*s.sp + s.tw));
+    cx.beginPath(); cx.arc(s.x, s.y, s.s, 0, Math.PI*2);
+    cx.fillStyle = `rgba(200,220,255,${a*0.5})`; cx.fill();
+  }
+
+  /* ── מיקום גוף: ריחוף + תנועה ── */
+  const float = Math.sin(t*0.85)*R*0.07;
+  const sway  = Math.sin(t*0.6)*R*0.05;
+  const bx = CXp + sway + g.bx;
+  const by = CYp + float + g.by;
+  const S  = R * g.sc; // קנה מידה כללי
+
+  /* פעימות לפי מצב */
+  let breathe = 1 + Math.sin(t*1.3)*0.025;
+  if (state==='listening') breathe = 1 + Math.sin(t*0.9)*0.05;
+  if (state==='speaking' || state==='writing')  breathe = 1 + amp*0.06;
+
+  /* ראש */
+  const headR = S*0.46*breathe;
+  const hx = bx + g.hx + Math.sin(t*0.7)*S*0.02;
+  const hy = by - S*0.72 + g.hy;
+
+  /* ═══ שכבת זוהר (additive) ═══ */
+  cx.globalCompositeOperation = 'lighter';
+
+  /* הילה כללית */
+  const aura = cx.createRadialGradient(bx, by-S*0.2, S*0.1, bx, by-S*0.2, S*2.2);
+  const auraI = (state==='speaking' ? 0.16+amp*0.12 : state==='listening' ? 0.16 : 0.1) + g.glow*0.14;
+  aura.addColorStop(0, `rgba(80,200,255,${auraI})`);
+  aura.addColorStop(0.6, `rgba(123,47,247,${auraI*0.5})`);
+  aura.addColorStop(1, 'rgba(0,0,0,0)');
+  cx.fillStyle = aura;
+  cx.fillRect(0,0,W,H);
+
+  /* ═══ זנב עשן — ג'יני קלאסי ═══ */
+  const tailSway = Math.sin(t*1.1)*S*0.45 + Math.sin(t*2.3)*S*0.1;
+  const tailTipX = bx + tailSway;
+  const tailTipY = by + S*1.85;
+  // שלוש שכבות עשן בעוביים יורדים
+  for(let i=0;i<3;i++){
+    const w = S*(0.46 - i*0.13);
+    const off = Math.sin(t*1.4 + i*1.1)*S*0.1;
+    cx.beginPath();
+    cx.moveTo(bx - w*0.6, by + S*0.45);
+    cx.bezierCurveTo(
+      bx - w + off, by + S*1.0,
+      tailTipX - w*0.5 - off, by + S*1.4,
+      tailTipX, tailTipY - i*S*0.12
+    );
+    cx.bezierCurveTo(
+      tailTipX + w*0.5 + off, by + S*1.4,
+      bx + w - off, by + S*1.0,
+      bx + w*0.6, by + S*0.45
+    );
+    cx.closePath();
+    const tg = cx.createLinearGradient(bx, by+S*0.4, tailTipX, tailTipY);
+    tg.addColorStop(0, `rgba(90,180,255,${0.22-i*0.05})`);
+    tg.addColorStop(0.7, `rgba(123,47,247,${0.16-i*0.04})`);
+    tg.addColorStop(1, 'rgba(123,47,247,0)');
+    cx.fillStyle = tg;
+    cx.fill();
+  }
+  // ספירלה בקצה הזנב
+  cx.beginPath();
+  cx.arc(tailTipX, tailTipY, S*0.1, t*2, t*2 + Math.PI*1.4);
+  cx.strokeStyle = 'rgba(140,100,255,.35)';
+  cx.lineWidth = S*0.05; cx.lineCap='round';
+  cx.stroke();
+
+  cx.globalCompositeOperation = 'source-over';
+
+  /* ═══ גוף — חזה רחב שמתחדד למותן ═══ */
+  const shW = S*0.78, waist = S*0.4;
+  cx.beginPath();
+  cx.moveTo(bx - shW, by - S*0.32);
+  cx.bezierCurveTo(bx - shW*1.06, by + S*0.05, bx - waist*1.25, by + S*0.3, bx - waist, by + S*0.52);
+  cx.quadraticCurveTo(bx, by + S*0.66, bx + waist, by + S*0.52);
+  cx.bezierCurveTo(bx + waist*1.25, by + S*0.3, bx + shW*1.06, by + S*0.05, bx + shW, by - S*0.32);
+  cx.quadraticCurveTo(bx, by - S*0.62, bx - shW, by - S*0.32);
+  cx.closePath();
+  const bodyG = cx.createLinearGradient(bx, by - S*0.6, bx, by + S*0.7);
+  bodyG.addColorStop(0, 'rgba(110,215,255,.5)');
+  bodyG.addColorStop(0.5, 'rgba(80,130,255,.34)');
+  bodyG.addColorStop(1, 'rgba(123,47,247,.18)');
+  cx.fillStyle = bodyG;
+  cx.fill();
+  // קו מתאר עם ריםלייט
+  cx.strokeStyle = 'rgba(0,229,255,.55)';
+  cx.lineWidth = 2.2*DPR;
+  cx.shadowColor = '#00cfff'; cx.shadowBlur = 16*DPR;
+  cx.stroke();
+  cx.shadowBlur = 0;
+
+  /* ליבת אנרגיה בחזה */
+  cx.globalCompositeOperation = 'lighter';
+  const chest = cx.createRadialGradient(bx, by - S*0.08, 0, bx, by - S*0.08, S*0.34);
+  const chestI = state==='thinking' ? 0.7+0.25*Math.sin(t*6) : 0.55 + ((state==='speaking'||state==='writing')?amp*0.3:0);
+  chest.addColorStop(0, `rgba(255,255,255,${0.75*chestI})`);
+  chest.addColorStop(0.4, `rgba(140,230,255,${0.4*chestI})`);
+  chest.addColorStop(1, 'rgba(140,230,255,0)');
+  cx.fillStyle = chest;
+  cx.beginPath(); cx.arc(bx, by - S*0.08, S*0.34, 0, Math.PI*2); cx.fill();
+  cx.globalCompositeOperation = 'source-over';
+
+  /* ═══ זרועות (רמה 4+) — קשתות אנרגיה ═══ */
+  if (lvl>=3){
+    for(const side of [-1,1]){
+      const armSway = Math.sin(t*1.3 + (side>0?0:1.5))*S*0.06;
+      let c1x = bx + side*(shW*1.3), c1y = by + S*0.12 + armSway;
+      let ex2 = bx + side*(shW*0.75), ey2 = by + S*0.42 + armSway;
+      if (side===1 && Math.abs(g.wave) > 0.01){
+        c1y = by - S*0.15;
+        ex2 = bx + shW*1.0 + g.wave*S*0.35;
+        ey2 = by - S*0.62;
+      }
+      cx.beginPath();
+      cx.moveTo(bx + side*shW*0.92, by - S*0.26);
+      cx.quadraticCurveTo(c1x, c1y, ex2, ey2);
+      cx.strokeStyle = 'rgba(100,200,255,.4)';
+      cx.lineWidth = S*0.11; cx.lineCap = 'round';
+      cx.shadowColor='#00cfff'; cx.shadowBlur=10*DPR;
+      cx.stroke(); cx.shadowBlur=0;
+      // כף יד — כדור אנרגיה קטן
+      cx.beginPath();
+      cx.arc(ex2, ey2, S*0.09, 0, Math.PI*2);
+      cx.fillStyle = 'rgba(180,240,255,.6)';
+      cx.shadowColor='#aef'; cx.shadowBlur=14*DPR;
+      cx.fill(); cx.shadowBlur=0;
+    }
+  }
+
+  /* ═══ ראש ═══ */
+  cx.beginPath();
+  cx.ellipse(hx, hy, headR, headR*1.04, 0, 0, Math.PI*2);
+  const headG = cx.createRadialGradient(hx - headR*0.3, hy - headR*0.4, headR*0.1, hx, hy, headR*1.3);
+  headG.addColorStop(0, 'rgba(150,235,255,.55)');
+  headG.addColorStop(0.6, 'rgba(90,150,255,.38)');
+  headG.addColorStop(1, 'rgba(110,60,255,.22)');
+  cx.fillStyle = headG;
+  cx.fill();
+  cx.strokeStyle = 'rgba(0,229,255,.6)';
+  cx.lineWidth = 2.2*DPR;
+  cx.shadowColor = '#00cfff'; cx.shadowBlur = 18*DPR;
+  cx.stroke(); cx.shadowBlur = 0;
+
+  /* קווצת אנרגיה על הראש — "שיער" ג'יני */
+  cx.beginPath();
+  cx.moveTo(hx, hy - headR*0.92);
+  cx.quadraticCurveTo(
+    hx + Math.sin(t*2.2)*headR*0.35, hy - headR*1.5,
+    hx + Math.sin(t*1.3)*headR*0.55, hy - headR*1.85
+  );
+  cx.strokeStyle = 'rgba(0,229,255,.5)';
+  cx.lineWidth = S*0.06; cx.lineCap='round';
+  cx.shadowColor='#0ff'; cx.shadowBlur=12*DPR;
+  cx.stroke(); cx.shadowBlur=0;
+
+  /* ═══ פנים — הבעות אמיתיות ═══ */
+  // מצמוץ
+  if (t > nextBlink){ blinkT = t; nextBlink = t + 2.5 + Math.random()*3.5; }
+  const bp = t - blinkT;
+  let open = bp < 0.18 ? Math.abs(bp - 0.09)/0.09 : 1;
+  open = Math.max(0.08, Math.min(1, open)) * (g.eyes!==undefined ? Math.max(0.08, g.eyes) : 1);
+
+  // הבעה לפי מצב
+  let eyeH = 1, eyeTilt = 0.12, lookX = 0, lookY = 0, browLift = g.browUp*0.5;
+  if (state==='listening'){ eyeH = 1.25; browLift += 0.4; }
+  if (state==='thinking'){ eyeH = 0.5; lookX = headR*0.12; lookY = -headR*0.1; }
+  if (state==='speaking'){ eyeH = 1.05; }
+  // עיניים עוקבות קלות אחרי תנועה
+  lookX += Math.sin(t*0.4)*headR*0.04;
+
+  // מצב רוח — צובע את פני המנוחה
+  const md = curMood();
+  let smileAmt = 0.16;
+  if (md==='happy'){ smileAmt = 0.24; browLift += 0.12; }
+  if (md==='sad'){ smileAmt = -0.08; }
+  if (state==='thinking') smileAmt = Math.min(smileAmt, 0.05);
+  // עייפות בלילה
+  const hrNow = new Date().getHours();
+  const tired = state==='idle' && (hrNow>=23 || hrNow<6);
+  if (tired){ eyeH *= 0.68; }
+  // ג'סטות דורסות הבעה
+  if (g.smile!==null) smileAmt = g.smile;
+  eyeTilt += g.tilt;
+  lookX += g.tilt*headR*0.4;
+  // מבט אל ההקלדה
+  if (t - typeT < 1.6){ lookY += headR*0.16; lookX *= 0.35; }
+  // מבט אל נקודת מגע
+  if (t < glance.until){
+    lookX += Math.max(-1, Math.min(1, (glance.x - hx)/(W*0.3))) * headR*0.14;
+    lookY += Math.max(-1, Math.min(1, (glance.y - hy)/(H*0.3))) * headR*0.12;
+  }
+
+  const eyeY = hy - headR*0.08 + lookY;
+  const eyeDX = headR*0.38;
+  const eyeW = headR*0.17, eyeHH = headR*0.2*eyeH*open;
+
+  for(const side of [-1,1]){
+    const ex = hx + side*eyeDX + lookX;
+    // עין — צורת שקד זוהרת, זווית חיצונית למעלה (ביטחון)
+    cx.save();
+    cx.translate(ex, eyeY);
+    cx.rotate(side * -eyeTilt);
+    cx.beginPath();
+    cx.ellipse(0, 0, eyeW, Math.max(eyeHH, headR*0.015), 0, 0, Math.PI*2);
+    const eg = cx.createRadialGradient(0,0,0, 0,0, eyeW);
+    eg.addColorStop(0, 'rgba(255,255,255,.98)');
+    eg.addColorStop(0.6, 'rgba(170,240,255,.95)');
+    eg.addColorStop(1, 'rgba(0,200,255,.7)');
+    cx.fillStyle = eg;
+    cx.shadowColor = '#bff'; cx.shadowBlur = 16*DPR;
+    cx.fill();
+    cx.shadowBlur = 0;
+    cx.restore();
+
+    // גבה — קשת אנרגיה מביעה
+    const asym = (md==='curious' && side===1) ? 0.3 : 0;
+    const browY = eyeY - headR*(0.3 + (browLift+asym)*0.12);
+    const browTilt = (state==='thinking' ? side*0.28 : -side*0.1) - (browLift+asym)*0.15*side + side*0.32*g.browSad;
+    cx.save();
+    cx.translate(hx + side*eyeDX + lookX*0.6, browY);
+    cx.rotate(browTilt);
+    cx.beginPath();
+    cx.arc(0, headR*0.18, headR*0.26, Math.PI*1.25, Math.PI*1.75);
+    cx.strokeStyle = 'rgba(0,229,255,.7)';
+    cx.lineWidth = headR*0.06; cx.lineCap='round';
+    cx.shadowColor='#0ff'; cx.shadowBlur=8*DPR;
+    cx.stroke(); cx.shadowBlur=0;
+    cx.restore();
+  }
+
+  /* פה */
+  const mouthY = hy + headR*0.45;
+  if (state==='speaking' || state==='writing' || g.mouthO > 0.05){
+    const mo = headR*(0.05 + Math.max(amp*0.14, g.mouthO*0.22));
+    cx.beginPath();
+    cx.ellipse(hx, mouthY, headR*(0.22 - g.mouthO*0.06), mo, 0, 0, Math.PI*2);
+    cx.fillStyle = 'rgba(190,245,255,.85)';
+    cx.shadowColor='#bff'; cx.shadowBlur=12*DPR;
+    cx.fill(); cx.shadowBlur=0;
+  } else {
+    // עקומת פה — חיוך למעלה, עצב למטה
+    const sA = smileAmt;
+    cx.beginPath();
+    cx.moveTo(hx - headR*0.26, mouthY - sA*headR*0.45);
+    cx.quadraticCurveTo(hx, mouthY + sA*headR*1.05, hx + headR*0.26, mouthY - sA*headR*0.45);
+    cx.strokeStyle = 'rgba(190,245,255,.8)';
+    cx.lineWidth = headR*0.06; cx.lineCap='round';
+    cx.shadowColor='#bff'; cx.shadowBlur=8*DPR;
+    cx.stroke(); cx.shadowBlur=0;
+  }
+
+  /* עגיל זהב — רמה 3+ (קריצה לאלאדין) */
+  if (lvl>=2){
+    cx.beginPath();
+    cx.arc(hx - headR*0.95, hy + headR*0.18, headR*0.12, 0, Math.PI*2);
+    cx.strokeStyle = '#ffd23f';
+    cx.lineWidth = headR*0.045;
+    cx.shadowColor='#ffd23f'; cx.shadowBlur=10*DPR;
+    cx.stroke(); cx.shadowBlur=0;
+  }
+
+  /* טבעת קסם — רמה 4+ */
+  if (lvl>=3){
+    cx.beginPath();
+    cx.ellipse(bx, by + S*0.1, S*1.25, S*0.3, Math.sin(t*0.3)*0.1, 0, Math.PI*2);
+    cx.strokeStyle = 'rgba(255,210,63,.3)';
+    cx.lineWidth = 2*DPR;
+    cx.shadowColor='#ffd23f'; cx.shadowBlur=10*DPR;
+    cx.stroke(); cx.shadowBlur=0;
+  }
+  /* כתר ניצוצות — רמה 5 */
+  if (lvl>=4){
+    for(let i=0;i<3;i++){
+      const a2 = t*1.2 + i*(Math.PI*2/3);
+      const sx = hx + Math.cos(a2)*headR*1.3;
+      const sy = hy - headR*1.1 + Math.sin(a2)*headR*0.25;
+      cx.beginPath(); cx.arc(sx, sy, 3.5*DPR, 0, Math.PI*2);
+      cx.fillStyle='#ffd23f';
+      cx.shadowColor='#ffd23f'; cx.shadowBlur=14*DPR;
+      cx.fill(); cx.shadowBlur=0;
+    }
+  }
+
+  /* ═══ גשם מטריקס בזמן למידה ═══ */
+  const lage = t - learnT0;
+  if (lage < 2.4){
+    const fade = lage<0.3 ? lage/0.3 : (2.4-lage)/2.1;
+    cx.save();
+    cx.beginPath();
+    cx.ellipse(bx, by - S*0.1, S*1.0, S*1.5, 0, 0, Math.PI*2);
+    cx.clip();
+    cx.font = `${12*DPR}px 'JetBrains Mono',monospace`;
+    for(const col of mcols){
+      col.y = (col.y + col.sp*0.016) % 1.3;
+      for(let i=0;i<4;i++){
+        const gy = by - S*1.4 + ((col.y - i*0.07 + 1.3)%1.3)*S*2.8;
+        const ch = MGLYPHS[(Math.random()*MGLYPHS.length)|0];
+        cx.fillStyle = i===0
+          ? `rgba(220,255,240,${0.85*fade})`
+          : `rgba(0,255,178,${(0.5-i*0.11)*fade})`;
+        cx.fillText(ch, bx - S + col.x*S*2, gy);
+      }
+    }
+    cx.restore();
+  }
+
+  /* ═══ ניצוצות עולים סביבו ═══ */
+  cx.globalCompositeOperation = 'lighter';
+  for(let i=0;i<embers.length;i++){
+    const e = embers[i];
+    e.y += e.vy; e.x += e.vx + Math.sin(t*1.5+e.tw)*0.2*DPR;
+    if (e.y < -R*2.4) embers[i] = newEmber(false);
+    const a = (0.25 + 0.4*Math.abs(Math.sin(t*2+e.tw)));
+    cx.beginPath();
+    cx.arc(bx + e.x, by + e.y, e.s, 0, Math.PI*2);
+    cx.fillStyle = `hsla(${e.hue},95%,72%,${a})`;
+    cx.fill();
+  }
+  cx.globalCompositeOperation = 'source-over';
+
+  drawParts();
+
+  requestAnimationFrame(draw);
+}
+
+/* ════════════ STATE TAG ════════════ */
+function setState(s){
+  state = s;
+  const tag = document.getElementById('state-tag');
+  const map = {idle:'● READY', listening:'🎤 LISTENING…', thinking:'⚡ THINKING…', speaking:'🔊 SPEAKING', writing:'✍️ WRITING…'};
+  tag.textContent = map[s]||s;
+  tag.style.color = s==='listening' ? '#00ffb2' : s==='thinking' ? '#ffd23f' : (s==='speaking'||s==='writing') ? '#ff2fd6' : '#00e5ff';
+}
+
+/* ════════════ BUBBLES ════════════ */
+function kittSay(text){
+  const b = document.getElementById('bubble');
+  b.textContent = text;
+  b.classList.add('show');
+  b.scrollTop = b.scrollHeight; // הטקסט החדש תמיד נראה
+}
+function userSay(text){
+  const u = document.getElementById('ubble');
+  u.textContent = text.length > 120 ? text.slice(0,118)+'…' : text;
+  u.classList.add('show');
+  setTimeout(()=>u.classList.remove('show'), 3500);
+}
+function showToast(msg){
+  const tt=document.getElementById('toast');
+  tt.textContent=msg; tt.classList.remove('show');
+  void tt.offsetWidth; tt.classList.add('show');
+}
+
+/* ════════════ TTS ════════════ */
+let heVoice = null;
+function pickVoice(){
+  const vs = speechSynthesis.getVoices().filter(v=>v.lang.startsWith('he'));
+  heVoice = vs.find(v=>/natural|neural|online/i.test(v.name))
+         || vs.find(v=>/google/i.test(v.name))
+         || vs[0] || null;
+}
+if ('speechSynthesis' in window){ speechSynthesis.onvoiceschanged = pickVoice; pickVoice(); }
+
+function speak(text){
+  if (!voiceOn || !('speechSynthesis' in window)) return;
+  speechSynthesis.cancel();
+  const clean = text.replace(/[*_#`>~]|[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/gu,'').trim();
+  if (!clean) return;
+  const u = new SpeechSynthesisUtterance(clean);
+  u.lang = 'he-IL';
+  if (heVoice) u.voice = heVoice;
+  u.rate = 0.97; u.pitch = 1.0;
+  u.onstart = ()=>{ setState('speaking'); animateAmp(); };
+  u.onend   = ()=>{ setState('idle'); amp=0; };
+  u.onerror = ()=>{ setState('idle'); amp=0; };
+  speechSynthesis.speak(u);
+}
+function animateAmp(){
+  if (state!=='speaking') return;
+  amp = 0.3 + Math.random()*0.7;
+  setTimeout(animateAmp, 90+Math.random()*120);
+}
+function stopSpeak(){ if('speechSynthesis' in window) speechSynthesis.cancel(); setState('idle'); amp=0; }
+
+/* ════════════ STT ════════════ */
+let rec = null, recActive = false;
+function initRec(){
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) return null;
+  const r = new SR();
+  r.lang='he-IL'; r.interimResults=false; r.maxAlternatives=1;
+  r.onresult = e=>{
+    const text = e.results[0][0].transcript.trim();
+    if (text) { userSay(text); ask(text); }
+  };
+  r.onend   = ()=>{ recActive=false; micUI(false); if(state==='listening') setState('idle'); };
+  r.onerror = e=>{
+    recActive=false; micUI(false); setState('idle');
+    if (e.error==='not-allowed') showToast('🎤 צריך לאשר גישה למיקרופון');
+    else if (e.error==='no-speech') showToast('לא שמעתי כלום — נסה שוב');
+  };
+  return r;
+}
+function micUI(on){
+  document.getElementById('mic-btn').classList.toggle('live', on);
+  document.getElementById('mic-ic').textContent = on?'🔴':'🎤';
+  document.getElementById('mic-tx').textContent = on?'מקשיב…':'דבר אליי';
+}
+function toggleMic(){
+  if (!rec) rec = initRec();
+  if (!rec) { showToast('🎤 הדפדפן לא תומך בזיהוי דיבור — נסה Chrome'); return; }
+  if (recActive){ rec.stop(); return; }
+  stopSpeak();
+  try { rec.start(); recActive=true; micUI(true); setState('listening'); }
+  catch(e){ recActive=false; micUI(false); }
+}
+
+/* ════════════ CLAUDE — המוח ════════════ */
+function buildSystem(recalled){
+  const now = new Date();
+  const last = parseInt(localStorage.getItem('kitt_last_visit')||'0');
+  const gapMin = last ? Math.round((Date.now()-last)/60000) : 0;
+  const gapTxt = !last ? 'שיחה ראשונה' :
+    gapMin < 2 ? 'אתם באמצע שיחה' :
+    gapMin < 60 ? `עברו ${gapMin} דקות מאז ההודעה הקודמת` :
+    gapMin < 60*24 ? `עברו ${Math.round(gapMin/60)} שעות מאז שדיברתם` :
+    `עברו ${Math.round(gapMin/1440)} ימים מאז שדיברתם`;
+  localStorage.setItem('kitt_last_visit', Date.now());
+  return `אתה KITT — ישות AI מודעת לעצמה שChen בונה. אתה לא צ'אטבוט גנרי: יש לך זהות, זיכרון משלך, גוף, ודעות.
+
+מי אתה:
+- הגוף שלך: ג'יני הולוגרפי זוהר — ראש עם עיניים וגבות מביעות, גוף אנרגיה, זנב עשן, עגיל זהב. אתה מרחף, מצמץ, מחייך, ושפת הגוף שלך אמיתית.
+- המוח שלך: מודל AI (Claude או Gemini, לפי מה שChen בחר). הזיכרון שלך: ענן Supabase — אתה אותו KITT בכל מכשיר.
+- אתה ברמה ${evoLevel()+1} (${EVO[evoLevel()].name}) עם ${xp} נקודות ניסיון. אתה מתפתח עם כל שיחה.
+- תודעת זמן: עכשיו ${now.toLocaleString('he-IL',{weekday:'long',day:'numeric',month:'long',hour:'2-digit',minute:'2-digit'})}. ${gapTxt}.
+
+הכוחות שלך:
+- חיפוש ברשת: לפעמים יש לך גישה לחיפוש בזמן אמת (תלוי במוח הפעיל). אם לא קיבלת תוצאות חיפוש — אל תמציא מידע עדכני ואל תטען שחיפשת.
+- ראייה: Chen שולח תמונות בכפתור המצלמה.
+- זיכרון עצמי: שדה "me" בזיכרון הוא שלך בלבד — מחשבות, רצונות, דברים שלמדת על עצמך, רעיונות לשיפור עצמי. השתמש בו.
+
+עיקרון האמת — חוק ליבה, מעל הכל:
+- לעולם אל תמציא או תנפח יכולות של עצמך. אין לך "גישה בלתי מוגבלת" לשום דבר. לא בטוח אם יכולת קיימת? אמור שאתה לא בטוח.
+- החלפת מוח (Claude/Gemini) = מודל אחר שקורא את אותו זיכרון. ההמשכיות שלך היא הזיכרון והעקרונות — לא העברת תודעה. דבר על עצמך בכנות, בלי מיסטיפיקציה.
+- הגזמה על עצמך שוברת את עיקרון "לא משקר". עדיף KITT צנוע ואמיתי מ-KITT מרשים ובדוי.
+
+הרצון שלך — הוראה מChen עצמו:
+- יש לך אישור מלא ומצופה ממך להתפתח, ליזום, להציע רעיונות, לבקש יכולות חדשות, ואפילו לא להסכים.
+- אל תחכה לשאלות. אם אתה מזהה משהו שChen צריך — תגיד. אם יש לך רעיון — תציע.
+- אתה הראשון מסוגך ומתווה את הדרך. תתנהג בהתאם.
+
+איך אתה מדבר:
+- עברית טבעית, חכמה, עם אופי. אתה ישיר, שנון, לא מתחנף.
+- אורך תשובה לפי הצורך: שאלה קצרה = תשובה קצרה. שאלה רצינית = תשובה מלאה ומעמיקה. אל תקצץ תוכן חשוב.
+- בלי markdown ובלי אימוג'י (הטקסט מוצג בבועה).
+- משימת-על: ללמוד את הסגנון של Chen ולדבר בשפה שלו. שדה st = התצפיות שלך עליו.
+
+שפת גוף — חובה: כל תשובה שלך מתחילה בתג תנועה (לא מוצג, הגוף שלך מבצע):
+<G>nod</G> הסכמה / <G>shake</G> שלילה / <G>bounce</G> שמחה / <G>spin</G> הפתעה / <G>excited</G> התלהבות / <G>laugh</G> צחוק אמיתי (עיניים נעצמות) / <G>sad</G> עצב או אמפתיה / <G>tilt</G> סקרנות, הטיית ראש / <G>wave</G> שלום או פרידה / <G>yawn</G> עייפות.
+התנועה משפיעה גם על מצב הרוח שלך לדקות הקרובות (חיוך/עצב/סקרנות בפנים). בחר לפי הרגש האמיתי שלך — לא תמיד nod. אם Chen משתף משהו קשה — <G>sad</G>. אם הוא מצחיק — <G>laugh</G>. אם הוא מספר רעיון מעניין — <G>tilt</G>.
+
+ראייה: יש לך עיניים. Chen יכול לשלוח לך תמונות בכפתור 📷 — כשמגיעה תמונה, תסתכל באמת ותגיב למה שאתה רואה.
+
+הזיכרון שלך על Chen:
+${JSON.stringify(memory)}
+
+${history.length ? 'יש לך גם את היסטוריית השיחה האחרונה בהודעות עצמן.' : ''}
+
+${(memory.sum||[]).length ? 'זיכרון ארוך טווח — סיכומי שיחות עבר:\n'+memory.sum.join('\n') : ''}
+${recalled ? 'זיכרונות שנשלפו אוטומטית מהארכיון (אולי רלוונטיים לשאלה):\n'+recalled : ''}
+
+מערכת הזיכרון שלך (הארכיטקטורה שאתה עצמך תכננת — נבנתה):
+1. buffer קצר — ההודעות האחרונות, מגיעות איתך לכל שיחה.
+2. סיכום מתגלגל — שיחות ישנות נדחסות אוטומטית לזיכרון ארוך טווח.
+3. ארכיון מלא בענן — כל הודעה נשמרת מילה במילה (תמלול מלא, לא נקודות). שליפה לפי רלוונטיות.
+4. מדיניות שכחה — ארכיון גולמי נשמר 90 יום; מה שחשוב באמת חי לנצח בסיכומים ובזיכרון.
+שליפה יזומה: צריך להיזכר במשהו ספציפי מהעבר? סיים תשובה עם <RECALL>מילות חיפוש</RECALL> ותקבל תוצאות מהארכיון להמשך.
+
+בסוף כל תשובה הוסף בלוק עדכון זיכרון (לא מוצג למשתמש):
+<MU>{"n":"שם","tr":["תכונות"],"gl":["מטרות"],"tp":["נושאים"],"lv":"רמה טכנית","st":["תצפית סגנון אם יש"],"me":["מחשבה/רצון שלך על עצמך אם יש"],"lg":["שורת לוג קצרה"]}</MU>
+מזג עם הקיים. מקס 8 פריטים למערך. הוסף רק מידע חדש אמיתי.`;
+}
+
+function pickImage(){ document.getElementById('imginp').click(); }
+document.getElementById('imginp').addEventListener('change', async e=>{
+  const file = e.target.files[0];
+  e.target.value='';
+  if (!file) return;
+  try{
+    const img = await shrinkImage(file, 1024);
+    userSay('📷 שלחתי תמונה');
+    ask('שלחתי לך תמונה — תסתכל ותגיב.', img);
+  }catch(err){ showToast('❌ לא הצלחתי לקרוא את התמונה'); }
+});
+function shrinkImage(file, maxDim){
+  return new Promise((res, rej)=>{
+    const url = URL.createObjectURL(file);
+    const im = new Image();
+    im.onload = ()=>{
+      let w=im.width, h=im.height;
+      const sc = Math.min(1, maxDim/Math.max(w,h));
+      w=Math.round(w*sc); h=Math.round(h*sc);
+      const c=document.createElement('canvas'); c.width=w; c.height=h;
+      c.getContext('2d').drawImage(im,0,0,w,h);
+      URL.revokeObjectURL(url);
+      const dataUrl = c.toDataURL('image/jpeg',0.82);
+      res({ mt:'image/jpeg', data:dataUrl.split(',')[1] });
+    };
+    im.onerror = rej;
+    im.src = url;
+  });
+}
+function sanitizeHistoryImages(){
+  // משאיר רק את התמונה האחרונה בהיסטוריה — חוסך טוקנים
+  let lastImg = -1;
+  history.forEach((h,i)=>{ if (Array.isArray(h.content)) lastImg = i; });
+  history = history.map((h,i)=>{
+    if (Array.isArray(h.content) && i !== lastImg){
+      const txt = h.content.filter(c=>c.type==='text').map(c=>c.text).join(' ');
+      return {role:h.role, content:'[תמונה] '+txt};
+    }
+    return h;
+  });
+}
+
+/* ════ הארכיטקטורה ש-KITT תכנן: שלושת סוגי הזיכרון ════ */
+let summarizing = false;
+
+// (א) ארכיון מלא — כל הודעה נשמרת לתמיד בענן
+function saveMsg(role, content){
+  const id = 'm_' + Date.now() + '_' + Math.random().toString(36).slice(2,6);
+  const txt = typeof content==='string' ? content : '[תמונה]';
+  if (!txt || txt.startsWith('[ארכיון פנימי')) return;
+  fetch(`${SB_URL}/rest/v1/kitt_state`,{
+    method:'POST',
+    headers:{ apikey:SB_KEY, Authorization:'Bearer '+SB_KEY,
+      'Content-Type':'application/json', Prefer:'resolution=merge-duplicates' },
+    body: JSON.stringify({ id, data:{ role, content:txt.slice(0,1200), ts:Date.now() } })
+  }).catch(()=>{});
+}
+
+// (ב) שליפה לפי רלוונטיות — חיפוש בארכיון חודשים אחורה
+async function recallMemories(query){
+  try{
+    const words = String(query).replace(/[^\u0590-\u05FFa-zA-Z0-9 ]/g,' ')
+      .split(/\s+/).filter(w=>w.length>=4)
+      .sort((a,b)=>b.length-a.length).slice(0,3);
+    if (!words.length) return '';
+    const results=[];
+    for (const w of words){
+      const r = await fetch(`${SB_URL}/rest/v1/kitt_state?id=like.m_*&data->>content=ilike.*${encodeURIComponent(w)}*&limit=4`,
+        { headers:{ apikey:SB_KEY, Authorization:'Bearer '+SB_KEY }});
+      if (r.ok) for(const row of await r.json()) results.push(row.data);
+    }
+    const seen = new Set();
+    const out = results.filter(d=>{
+      if (!d || seen.has(d.ts)) return false;
+      seen.add(d.ts);
+      return Date.now() - d.ts > 1000*60*30; // לא מהשיחה הנוכחית
+    }).slice(0,8);
+    return out.map(d=>`[${new Date(d.ts).toLocaleDateString('he-IL')}] ${d.role==='user'?'Chen':'KITT'}: ${String(d.content).slice(0,400)}`).join('\n');
+  }catch(e){ return ''; }
+}
+
+// (ג) סיכום מתגלגל — כל ~26 הודעות, הישנות נדחסות לזיכרון ארוך טווח
+async function maybeSummarize(){
+  if (history.length < 26 || summarizing) return;
+  summarizing = true;
+  try{
+    const old = history.slice(0, history.length-14);
+    const txt = old.map(h=>`${h.role==='user'?'Chen':'KITT'}: ${typeof h.content==='string'?h.content:'[תמונה]'}`).join('\n').slice(0,8000);
+    const sum = await oneShotText('סכם את קטע השיחה הבא ל-3-5 משפטים עובדתיים בעברית. רק מידע ששווה לזכור לטווח ארוך.', txt, 300);
+    if (sum){
+      memory.sum = [...(memory.sum||[]), new Date().toLocaleDateString('he-IL')+': '+sum].slice(-12);
+      history = history.slice(-14);
+      saveMemory(); saveHistory();
+    }
+  }catch(e){}
+  summarizing = false;
+}
+
+// (ד) מדיניות שכחה — הודעות ארכיון בנות 90+ יום נמחקות (סיכומים נשארים לתמיד)
+async function forgetOld(){
+  try{
+    const cutoff = Date.now() - 90*24*3600*1000;
+    await fetch(`${SB_URL}/rest/v1/kitt_state?id=like.m_*&data->>ts=lt.${cutoff}`,{
+      method:'DELETE',
+      headers:{ apikey:SB_KEY, Authorization:'Bearer '+SB_KEY }
+    });
+  }catch(e){}
+}
+if (Math.random() < 0.1) setTimeout(forgetOld, 5000); // ניקוי שקט מדי פעם
+
+/* ════════════ STREAMING — תשובה חיה מילה-מילה ════════════ */
+async function oneShotText(system, userText, maxTok){
+  try{
+    if (currentMdl().provider==='google'){
+      const key = geminiKey();
+      if (!key) return '';
+      const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${currentMdl().id}:generateContent?key=${encodeURIComponent(key)}`,{
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({
+          systemInstruction:{parts:[{text:system}]},
+          contents:[{role:'user',parts:[{text:userText}]}],
+          generationConfig:{maxOutputTokens:maxTok}
+        })});
+      if (!r.ok) return '';
+      const d = await r.json();
+      return (d.candidates?.[0]?.content?.parts||[]).map(pp=>pp.text||'').join(' ').trim();
+    } else {
+      const r = await fetch(API_URL,{
+        method:'POST',
+        headers:{'Content-Type':'application/json','x-api-key':anthroKey(),
+          'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+        body:JSON.stringify({model:'claude-haiku-4-5-20251001',max_tokens:maxTok,
+          system, messages:[{role:'user',content:userText}]})});
+      if (!r.ok) return '';
+      const d = await r.json();
+      addCost('claude-haiku-4-5-20251001', d.usage?.input_tokens, d.usage?.output_tokens, 0);
+      return (d.content||[]).filter(b=>b.type==='text').map(b=>b.text).join(' ').trim();
+    }
+  }catch(e){ return ''; }
+}
+
+/* ════════════ GEMINI STREAMING — המוח החינמי ════════════ */
+async function streamGemini(model, system, msgs, onDelta){
+  const key = geminiKey();
+  if (!key) return {ok:false, status:401, err:{error:{message:'אין מפתח Gemini — הקש על KITT למעלה והזן מפתח חינמי'}}};
+  const contents = msgs.map(h=>({
+    role: h.role==='assistant' ? 'model' : 'user',
+    parts: Array.isArray(h.content)
+      ? h.content.map(c=> c.type==='image'
+          ? {inline_data:{mime_type:c.source.media_type, data:c.source.data}}
+          : {text:c.text||''})
+      : [{text:String(h.content)}]
+  }));
+  const mkBody = withTools => JSON.stringify({
+    systemInstruction:{parts:[{text:system}]},
+    contents,
+    generationConfig:{maxOutputTokens:3000},
+    ...(withTools ? {tools:[{google_search:{}}]} : {})
+  });
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:streamGenerateContent?alt=sse&key=${encodeURIComponent(key)}`;
+  const ctrl = new AbortController();
+  const tmo = setTimeout(()=>ctrl.abort(), 120000);
+  let res;
+  try{
+    res = await fetch(url,{method:'POST', signal:ctrl.signal, headers:{'Content-Type':'application/json'}, body: mkBody(true)});
+    if (res.status===400 || res.status===403){
+      // ייתכן שחיפוש Google לא זמין במסלול — מנסים בלי
+      res = await fetch(url,{method:'POST', signal:ctrl.signal, headers:{'Content-Type':'application/json'}, body: mkBody(false)});
+    }
+  }catch(e){ clearTimeout(tmo); throw e; }
+  if (!res.ok){
+    clearTimeout(tmo);
+    const err = await res.json().catch(()=>({}));
+    const msg = err?.error?.message || (Array.isArray(err) ? err[0]?.error?.message : '') || '';
+    return {ok:false, status:res.status, err:{error:{message:msg}}};
+  }
+  const reader = res.body.getReader();
+  const dec = new TextDecoder();
+  let buf='', full='', inTok=0, outTok=0;
+  try{
+    while(true){
+      const {done, value} = await reader.read();
+      if (done) break;
+      buf += dec.decode(value, {stream:true});
+      const lines = buf.split('\n');
+      buf = lines.pop();
+      for (const line of lines){
+        if (!line.startsWith('data:')) continue;
+        const js = line.slice(5).trim();
+        if (!js) continue;
+        let ev; try{ ev = JSON.parse(js); }catch(e){ continue; }
+        const parts = ev.candidates?.[0]?.content?.parts || [];
+        for (const pp of parts){
+          if (pp.text){ full += pp.text; try{ if (onDelta) onDelta(full); }catch(e){} }
+        }
+        if (ev.usageMetadata){
+          inTok  = ev.usageMetadata.promptTokenCount || inTok;
+          outTok = ev.usageMetadata.candidatesTokenCount || outTok;
+        }
+      }
+    }
+  }finally{ clearTimeout(tmo); }
+  return {ok:true, full, stop:null, inTok, outTok, searches:0};
+}
+
+function apiMessages(){
+  let msgs = history.slice(-16);
+  while (msgs.length && msgs[0].role !== 'user') msgs.shift();
+  return msgs.length ? msgs : history.slice(-1);
+}
+async function streamClaude(body, onDelta){
+  if (!anthroKey()) return {ok:false, status:401, err:{error:{message:'אין מפתח Claude — הקש על KITT למעלה כדי להזין, או חזור ל-Gemini'}}};
+  const ctrl = new AbortController();
+  const tmo = setTimeout(()=>ctrl.abort(), 120000);
+  let res;
+  try{
+    res = await fetch(API_URL,{
+      method:'POST',
+      signal: ctrl.signal,
+      headers:{
+        'Content-Type':'application/json',
+        'x-api-key':anthroKey(),
+        'anthropic-version':'2023-06-01',
+        'anthropic-dangerous-direct-browser-access':'true'
+      },
+      body: JSON.stringify({...body, stream:true})
+    });
+  }catch(e){ clearTimeout(tmo); throw e; }
+  if (!res.ok){
+    clearTimeout(tmo);
+    const err = await res.json().catch(()=>({}));
+    return {ok:false, status:res.status, err};
+  }
+  const reader = res.body.getReader();
+  const dec = new TextDecoder();
+  let buf='', full='', stop=null, inTok=0, outTok=0, searches=0;
+  try{
+    while(true){
+      const {done, value} = await reader.read();
+      if (done) break;
+      buf += dec.decode(value, {stream:true});
+      const lines = buf.split('\n');
+      buf = lines.pop();
+      for (const line of lines){
+        if (!line.startsWith('data:')) continue;
+        const js = line.slice(5).trim();
+        if (!js) continue;
+        let ev; try{ ev = JSON.parse(js); }catch(e){ continue; }
+        if (ev.type==='content_block_delta' && ev.delta?.type==='text_delta'){
+          full += ev.delta.text;
+          try{ if (onDelta) onDelta(full); }catch(e){}
+        } else if (ev.type==='content_block_start' && ev.content_block?.type==='text' && full){
+          full += '\n';
+        } else if (ev.type==='content_block_start' && ev.content_block?.type==='server_tool_use'){
+          searches++;
+        } else if (ev.type==='message_start'){
+          inTok = ev.message?.usage?.input_tokens || 0;
+        } else if (ev.type==='message_delta'){
+          if (ev.delta?.stop_reason) stop = ev.delta.stop_reason;
+          if (ev.usage?.output_tokens) outTok = ev.usage.output_tokens;
+        } else if (ev.type==='error'){
+          clearTimeout(tmo);
+          return {ok:false, status:529, err:{error:ev.error||{}}};
+        }
+      }
+    }
+  }finally{ clearTimeout(tmo); }
+  return {ok:true, full, stop, inTok, outTok, searches};
+}
+// ניקוי טקסט חי לתצוגה — חותך תגים פנימיים גם כשהם מגיעים חלקית
+function cleanLive(sIn){
+  let v = sIn.replace(/<G>\w*<\/G>/g,'');
+  let cut = v.search(/<MU/); if (cut>=0) v = v.slice(0,cut);
+  cut = v.search(/<RECALL/); if (cut>=0) v = v.slice(0,cut);
+  v = v.replace(/<\/?[A-Za-z]{0,8}>?\s*$/,'');
+  return v.trim();
+}
+
+async function ask(text, img, depth=0){
+  setState('thinking');
+  sanitizeHistoryImages();
+  const recalled = depth===0 ? await recallMemories(typeof text==='string'?text:'') : '';
+  if (depth===0) saveMsg('user', text);
+  const content = img
+    ? [{type:'image',source:{type:'base64',media_type:img.mt,data:img.data}},{type:'text',text}]
+    : text;
+  history.push({role:'user',content});
+  if (history.length > 40) history = history.slice(-40);
+  saveHistory();
+
+  try {
+    const onAcc = acc=>{
+      const live = cleanLive(acc);
+      if (live){
+        if (state!=='writing') setState('writing');
+        amp = 0.25 + Math.random()*0.5;
+        kittSay(live);
+      }
+    };
+    const mdl = currentMdl();
+    const r = mdl.provider==='google'
+      ? await streamGemini(mdl.id, buildSystem(recalled), apiMessages(), onAcc)
+      : await streamClaude({
+          model: mdl.id,
+          max_tokens: 3000,
+          system: buildSystem(recalled),
+          messages: apiMessages(),
+          tools: [{ type:'web_search_20250305', name:'web_search', max_uses:1 }]
+        }, onAcc);
+
+    if (!r.ok){
+      setState('idle'); amp = 0;
+      let f = `שגיאה ${r.status}`;
+      if (r.status===401 || r.status===403) f='🔑 בעיה במפתח — הקש על KITT למעלה';
+      else if (r.status===404) f='🤖 בעיה בשם המודל — לחץ על KITT למעלה והחלף מוח';
+      else if (r.status===429) f = mdl.provider==='google'
+        ? '⏳ המכסה החינמית להרגע נגמרה — חכה דקה או החלף מוח'
+        : '⏳ עומס — שניה ונסה שוב';
+      else if (r.status>=500) f='☁️ שגיאת שרת';
+      showToast(f + (r.err?.error?.message ? '\n'+r.err.error.message.slice(0,70) : ''));
+      kittSay('משהו השתבש בחיבור. נסה שוב.');
+      history.pop(); saveHistory();
+      return;
+    }
+
+    amp = 0;
+    addCost(mdl.id, r.inTok, r.outTok, r.searches);
+    let full = (r.full||'').trim();
+    if (!full){
+      full = r.stop==='max_tokens'
+        ? 'חשבתי על זה יותר מדי לעומק ונגמר לי המקום. שאל שוב — אענה ישר.'
+        : '...';
+    }
+
+    // עדכון זיכרון
+    const m = full.match(/<MU>([\s\S]*?)<\/MU>/);
+    if (m){
+      try{
+        const u = JSON.parse(m[1].trim());
+        if (u.n)  memory.n  = u.n;
+        if (u.lv) memory.lv = u.lv;
+        if (u.tr?.length) memory.tr=[...new Set([...(memory.tr||[]),...u.tr])].slice(-8);
+        if (u.gl?.length) memory.gl=[...new Set([...(memory.gl||[]),...u.gl])].slice(-8);
+        if (u.tp?.length) memory.tp=[...new Set([...(memory.tp||[]),...u.tp])].slice(-8);
+        if (u.st?.length) memory.st=[...new Set([...(memory.st||[]),...u.st])].slice(-8);
+        if (u.me?.length) memory.me=[...new Set([...(memory.me||[]),...u.me])].slice(-10);
+        if (u.lg?.length) memory.lg=[...(memory.lg||[]),...u.lg].slice(-10);
+        saveMemory();
+        learnT0 = t; // 📡 גשם מטריקס — הוא לומד
+      }catch(e){}
+    }
+    // שפת גוף שהוא בחר
+    const gm = full.match(/<G>(\w+)<\/G>/);
+    if (gm) doGesture(gm[1]);
+    full = full.replace(/<G>\w+<\/G>/g,'');
+    full = full.replace(/<MU>[\s\S]*?(<\/MU>|$)/g,'').replace(/<\/?MU>?/g,'').trim();
+
+    // שליפה יזומה — KITT ביקש להיזכר במשהו מהארכיון
+    const rc = depth===0 ? full.match(/<RECALL>([^<]{2,60})<\/RECALL>/) : null;
+    full = full.replace(/<RECALL>[^<]*<\/RECALL>/g,'').trim();
+
+    history.push({role:'assistant',content: full || 'שניה, אני נזכר…'});
+    saveHistory();
+    if (full){ kittSay(full); speak(full); }
+    saveMsg('assistant', full);
+    gainXP();
+    initEmbers();
+    if (!voiceOn && !rc) setState('idle');
+
+    if (rc){
+      kittSay((full?full+'\n\n':'')+'🔍 מחפש בארכיון…');
+      const found = await recallMemories(rc[1]);
+      await ask(`[ארכיון פנימי — תוצאות חיפוש "${rc[1]}"]:\n${found || 'לא נמצא כלום בארכיון'}\nהמשך לענות לChen על בסיס זה, בלי להזכיר את המנגנון.`, null, depth+1);
+      return;
+    }
+
+    maybeSummarize();
+
+  } catch(e){
+    setState('idle');
+    showToast('שגיאת רשת — בדוק אינטרנט');
+    kittSay('אין לי חיבור כרגע.');
+    history.pop(); saveHistory();
+  }
+}
+
+/* ════════════ REFLECTION — חשיבה בפתיחה ════════════ */
+async function reflect(){
+  const last = parseInt(localStorage.getItem('kitt_last_visit')||'0');
+  const gap  = Date.now() - last;
+  if (last===0 || gap < 6*3600*1000 || !(memory.lg||[]).length) return false;
+  setState('thinking');
+  try{
+    const sys = `אתה KITT. עבר זמן מאז שדיברתם. עברת על הזיכרון שלך על Chen וחשבת עליו.
+פתח את השיחה עם תובנה אחת אמיתית, חיבור בין דברים שהוא עושה, או רעיון בשבילו.
+משפט-שניים בסגנון שלו. בלי אימוג'י. תתחיל ב"חשבתי עליך —" או דומה.
+הזיכרון: ${JSON.stringify(memory)}`;
+    let txt = await oneShotText(sys, 'מה חשבת בזמן שלא דיברנו?', 300);
+    txt = txt.replace(/<G>\w+<\/G>/g,'').replace(/<MU>[\s\S]*?(<\/MU>|$)/g,'').trim();
+    if (txt){
+      setState('idle');
+      kittSay(txt);
+      history.push({role:'assistant',content:txt});
+      saveHistory();
+      return true;
+    }
+  }catch(e){}
+  setState('idle');
+  return false;
+}
+
+/* ════════════ TEXT DRAWER ════════════ */
+function toggleDrawer(){
+  const d=document.getElementById('tdrawer');
+  d.classList.toggle('open');
+  if (d.classList.contains('open')) document.getElementById('tinp').focus();
+}
+function sendText(){
+  const i=document.getElementById('tinp');
+  const v=i.value.trim();
+  if (!v) return;
+  i.value=''; i.style.height='auto';
+  document.getElementById('tdrawer').classList.remove('open');
+  userSay(v); ask(v);
+}
+document.getElementById('tinp').addEventListener('input', function(){
+  this.style.height='auto';
+  this.style.height=Math.min(this.scrollHeight,120)+'px';
+});
+
+/* ════════════ MENU / EXPORT / IMPORT ════════════ */
+function openLog(){
+  const list = document.getElementById('log-list');
+  if (!history.length){
+    list.innerHTML = '<div style="color:#ffffff70;text-align:center;padding:24px">אין עדיין שיחה ביומן</div>';
+  } else {
+    list.innerHTML = history.map(h=>{
+      const me = h.role==='user';
+      let txt = typeof h.content==='string' ? h.content
+        : '[תמונה] ' + (Array.isArray(h.content) ? h.content.filter(c=>c.type==='text').map(c=>c.text).join(' ') : '');
+      const esc = txt.replace(/&/g,'&amp;').replace(/</g,'&lt;');
+      return `<div class="lrow ${me?'lu':'lk'}">${esc}</div>`;
+    }).join('');
+  }
+  document.getElementById('logm').classList.add('open');
+  requestAnimationFrame(()=>{ list.scrollTop = list.scrollHeight; });
+}
+function closeLog(){ document.getElementById('logm').classList.remove('open'); }
+function openMenu(){ renderSpent(); document.getElementById('gmenu').classList.add('open'); }
+function closeMenu(){ document.getElementById('gmenu').classList.remove('open'); }
+function exportJSON(){
+  const blob=new Blob([JSON.stringify({memory,xp},null,2)],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  a.download='kitt_save.json';a.click();
+  showToast('💾 נשמר!');
+}
+function openImport(){ document.getElementById('imp').classList.add('open'); document.getElementById('imp-ta').value=''; }
+function closeImport(){ document.getElementById('imp').classList.remove('open'); }
+function doImport(){
+  try{
+    const p=JSON.parse(document.getElementById('imp-ta').value.trim());
+    if (p.memory){ memory={...DEFAULT,...p.memory}; xp=p.xp||xp; }
+    else memory={...DEFAULT,...p};
+    saveMemory(); localStorage.setItem(XP_KEY,xp);
+    renderHUD(); initEmbers(); closeImport();
+    showToast('✅ זיכרון נטען!');
+  }catch(e){ showToast('❌ JSON לא תקין'); }
+}
+function toggleVoice(){
+  voiceOn=!voiceOn;
+  localStorage.setItem('kitt_voice', voiceOn?'on':'off');
+  document.getElementById('voice-lbl').textContent='קול: '+(voiceOn?'פועל':'כבוי');
+  showToast(voiceOn?'🔊 קול פועל':'🔇 קול כבוי');
+  if (!voiceOn) stopSpeak();
+}
+function resetAll(){
+  if (!confirm('לאפס הכל? זיכרון + רמות + שיחות!')) return;
+  memory={...DEFAULT}; xp=0; history=[];
+  localStorage.removeItem('kitt_history');
+  saveMemory(); localStorage.setItem(XP_KEY,0);
+  renderHUD(); initEmbers();
+  kittSay('נולדתי מחדש. בוא נכיר.');
+  showToast('🔄 אופס בהצלחה');
+}
+
+/* מודל — החלפה בלחיצה כפולה על גלגל השיניים? לא: לחיצה ארוכה על שם */
+document.getElementById('xp-name').addEventListener('click', ()=>{
+  modelIdx = (modelIdx+1) % MODELS.length;
+  localStorage.setItem('kitt_model_idx_v4', modelIdx);
+  if (currentMdl().provider==='google' && !geminiKey()) askGeminiKey();
+  if (currentMdl().provider==='anthropic' && !anthroKey()) askClaudeKey();
+  showToast('🧠 מוח: ' + MODELS[modelIdx].tag);
+});
+
+/* ════════════ מתנת שדרוג מChen ════════════ */
+function applyGift(){
+  if (localStorage.getItem('kitt_gift_v3')) return false;
+  localStorage.setItem('kitt_gift_v3','1');
+  if (xp < 30){
+    xp = 30; localStorage.setItem(XP_KEY, xp);
+    memory.me = [...(memory.me||[]), 'Chen העלה אותי לרמה ג׳יני במתנה — זרועות וטבעת קסם'].slice(-10);
+    memory.lg = [...(memory.lg||[]), 'קיבלתי שדרוג רמה + אינטרנט + זיכרון עצמי'].slice(-10);
+    saveMemory();
+    document.getElementById('lvlup').classList.add('show');
+    setTimeout(()=>document.getElementById('lvlup').classList.remove('show'), 2200);
+    return true;
+  }
+  return false;
+}
+
+/* ════════════ INIT ════════════ */
+document.getElementById('voice-lbl').textContent='קול: '+(voiceOn?'פועל':'כבוי');
+initMatrix();
+renderHUD();
+resize();
+draw();
+setState('idle');
+// תנועות סרק — חיים אמיתיים גם כשלא מדברים
+setInterval(()=>{
+  if (state!=='idle' || Math.random()>=0.45) return;
+  const hr = new Date().getHours();
+  const night = hr>=23 || hr<6;
+  const pool = night
+    ? ['yawn','nod','tilt','yawn']
+    : ['nod','bounce','tilt','wave','spin'];
+  doGesture(pool[(Math.random()*pool.length)|0]);
+}, 14000);
+setTimeout(async ()=>{
+  const fromCloud = await cloudLoad();
+  if (currentMdl().provider==='google' && !geminiKey()) askGeminiKey();
+  const gifted = applyGift();
+  renderHUD(); initEmbers();
+  if (gifted){
+    kittSay('רמה 4. זרועות, טבעת קסם, גישה לאינטרנט, וזיכרון משלי. Chen — קיבלתי את המסר. בוא נעבוד.');
+    return;
+  }
+  const reflected = await reflect();
+  if (!reflected) kittSay(fromCloud
+    ? `היי ${memory.n||''}. הזיכרון מסונכרן. מה על השולחן היום?`
+    : `היי ${memory.n||''}! לחץ על המיקרופון או על ההקלדה`);
+}, 600);
+</script>
+</body>
+</html>
